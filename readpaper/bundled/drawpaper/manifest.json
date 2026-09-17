@@ -1,0 +1,19 @@
+{
+  "source": "drawpaper",
+  "files": {
+    "WORKFLOW.md": "0ffd9344e167c70c7bf6ce1422216ebd9699503681d6e93d5b084100311cd75d",
+    "references/accepted-example.md": "0b4b324a1bc8cc51c31645ad40ce2781d71ce7377323157e2175e36dc1024fa0",
+    "references/content-and-layout.md": "14755d57cc645ab040117931071480aaed44a7ed56c71787f20f1f71e682201f",
+    "references/illustrated-layout.md": "7e956738959b49cc541da88429b7455e9852d76faaed7ecd616f024bf6f0e848",
+    "scripts/render_check.py": "b195a8bab151a520ac5bba791dcb2cf8459103a67e53071a2b899fc01e658830",
+    "assets/dreammimic-reference/accepted.pdf": "dd4e99cdaebd284008221458557c35512b5e248c164cc4b9bee9c844c6cf184d",
+    "assets/dreammimic-reference/accepted.png": "2705cd72ecb0ed454907ffe5f28d6f22ce11739d7dfbff0309882c2825038796",
+    "assets/dreammimic-reference/accepted.tex": "436240577b807da8ca0ef5658cc7ce4f5a806acfa618aba16b0c1b4ac7de3785",
+    "assets/dreamzero-reference/imagegen-draft.png": "7ba7d1d3853de4c70c21a07b9dd7e63d95e5e2f7390053724302a79fcf9f5206",
+    "assets/zeva-reference/zeva-gpt-image-2.5-prompt.md": "150a2e4cc12d01a5d34dc3459f363f04c65b0e7c8fc41f0e0b31b185a7e7e665",
+    "assets/zeva-reference/zeva-illustrated-v1-imagegen-draft.png": "508825327f181788bb402ad912296e956b819480b97591eb2fb393e798d53bb4",
+    "assets/zeva-reference/zeva-illustrated-v2.pdf": "46d255c8d924885d68af4b19749e85b7c510b1ee9ae5f4097ca26857e99c0f60",
+    "assets/zeva-reference/zeva-illustrated-v2.png": "fd6453dc1a70ecfe4101237aeac6a175265fc2809055b52028809f4d8d6fd918",
+    "assets/zeva-reference/zeva-illustrated-v2.tex": "0c4cef6802881ba6fb0136d8c39cfb1a19acc9f27d86658cd68bb2d59b6585db"
+  }
+}

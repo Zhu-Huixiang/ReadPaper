@@ -1,0 +1,4 @@
+interface:
+  display_name: "ReadPaper"
+  short_description: "论文精读全流程：自动建库、六块地图、随读答疑、验收归档，并内置 DrawPaper 绘图"
+  default_prompt: "使用 $readpaper 带我读这篇论文，初始化精读工作区，生成开卷地图与八道验收题，并用内置 DrawPaper 完成论文架构图。"

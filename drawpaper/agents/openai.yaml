@@ -1,0 +1,4 @@
+interface:
+  display_name: "DrawPaper"
+  short_description: "论文架构与插画图：保留选定草稿插画，精排公式，交付 PDF 与完整源码"
+  default_prompt: "使用 $drawpaper，提取论文关键原图并绘制包含输入输出、内部计算与训练部署流程的图文草稿；插画版逐区保留选定草稿的视觉素材，用 TikZ 精排文字、公式和连线，核对后交付原图、草稿、PDF、完整 PNG 及含图片依赖的源码包。"

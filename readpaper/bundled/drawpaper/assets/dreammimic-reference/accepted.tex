@@ -1,0 +1,223 @@
+% !TEX program = xelatex
+\documentclass[tikz,border=2mm]{standalone}
+\usepackage{fontspec,xeCJK,amsmath,amssymb,mathtools,lmodern}
+\setsansfont{Arial}
+\setCJKmainfont[Path=/System/Library/Fonts/,BoldFont={STHeiti Medium.ttc}]{STHeiti Light.ttc}
+\setCJKsansfont[Path=/System/Library/Fonts/,BoldFont={STHeiti Medium.ttc}]{STHeiti Light.ttc}
+\renewcommand{\familydefault}{\sfdefault}
+\usetikzlibrary{arrows.meta,calc,backgrounds}
+\definecolor{ink}{HTML}{17212B}
+\definecolor{line}{HTML}{647482}
+\definecolor{blue}{HTML}{235C87}
+\definecolor{wm}{HTML}{F0F5FA}
+\definecolor{mem}{HTML}{DAEAF7}
+\definecolor{enc}{HTML}{E3EEDB}
+\definecolor{act}{HTML}{F6D6CD}
+\definecolor{head}{HTML}{FFE0BA}
+\definecolor{gold}{HTML}{FFF5DA}
+\definecolor{supc}{HTML}{AE761C}
+\definecolor{updc}{HTML}{B04F4F}
+\newcommand{\E}{\mathbb E}
+\newcommand{\R}{\mathbb R}
+\newcommand{\sg}{\operatorname{sg}}
+\newcommand{\MSE}{\operatorname{MSE}}
+\newcommand{\symlog}{\operatorname{symlog}}
+\newcommand{\EMA}{\operatorname{EMA}}
+\newcommand{\clip}{\operatorname{clip}}
+\newcommand{\f}[1]{\mbox{\(\textstyle #1\)}}
+\tikzset{
+  arr/.style={-{Stealth[length=2.7mm,width=1.9mm]},draw=ink,line width=.95pt,rounded corners=.9mm},
+  ba/.style={arr,draw=blue,line width=1.1pt},
+  sa/.style={arr,draw=supc,dashed},
+  ua/.style={arr,draw=updc,dashed},
+  txt/.style={text=ink,font=\fontsize{15}{17}\selectfont,align=flush center,inner sep=.7mm},
+  small/.style={txt,font=\fontsize{13.5}{15.5}\selectfont},
+  panel/.style={draw=line,line width=.9pt,rounded corners=2.5mm},
+  cell/.style={draw=line,line width=.75pt,rounded corners=1.5mm,fill=white},
+}
+\newcommand{\panel}[6]{\draw[panel,fill=#5](#1,#2)rectangle++(#3,#4);\node[txt,anchor=north west,font=\bfseries\fontsize{17}{19}\selectfont] at(#1+.17,#2+.12){#6};}
+\newcommand{\txt}[5]{\node[txt,text width=#3cm]at(#1+#3/2,#2+#4/2){#5};}
+\newcommand{\sm}[5]{\node[small,text width=#3cm]at(#1+#3/2,#2+#4/2){#5};}
+\newcommand{\boxx}[7]{\node[cell,txt,fill=#6,minimum width=#3cm,minimum height=#4cm,text width=#3cm-2mm](#5)at(#1+#3/2,#2+#4/2){#7};}
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=-1cm]
+\path[use as bounding box](0,0)rectangle(37,35.8);
+\txt{0}{0}{37}{.7}{{\bfseries\fontsize{23}{26}\selectfont DreamMimic：三模型结构、训练与部署}}
+\sm{0}{.77}{37}{.45}{实线：信息流\quad 金色虚线：监督\quad 红色虚线：更新\qquad\f{\xi}：世界模型参数\quad\f{\theta}：学生参数\quad\f{\psi^\dagger}：教师参数}
+
+% The teaching map is organized by computation, not by the paper's subsection order.
+\panel{.1}{1.45}{7.8}{8.15}{white}{教师：RL，专用 → 通用}
+\panel{.1}{9.8}{7.8}{2.5}{white}{参考课程：重访困难片段}
+\panel{8.1}{1.45}{18.1}{10.85}{wm}{世界模型：记忆递推＋观测校正＋预测}
+\panel{26.4}{1.45}{10.5}{10.85}{white}{学生：三组特征融合后出动作}
+
+% Teacher inputs enter through separate top ports; both outputs leave downward.
+\boxx{.45}{2.3}{3.5}{1.15}{tx}{white}{\f{x_t}：完整状态\\{\fontsize{14}{16}\selectfont\f{x_t^{\rm obj},G_t^\dagger,c_t^{\rm contact}}}}
+\boxx{4.1}{2.3}{3.4}{1.15}{tr}{enc}{\f{\mathcal R_t^\dagger}：参考\\人／物轨迹}
+\boxx{.85}{3.95}{6.65}{.94}{teacher}{act}{\mbox{特权策略\ \f{\pi_\psi^{(T)}(\cdot\mid x_t,\mathcal R_t)}}}
+\draw[arr](tx.south)--(tx.south |- teacher.north);
+\draw[arr](tr.south)--(tr.south |- teacher.north);
+\boxx{.5}{5.4}{2.9}{.7}{mut}{enc}{\f{\mu_t^{(T)}}：蒸馏}
+\boxx{4.15}{5.4}{3.35}{.7}{at}{enc}{\f{a_t^{(T)}\sim\pi_\psi^{(T)}}}
+\draw[arr](teacher.south -| mut.north)--(mut.north);
+\draw[arr](teacher.south -| at.north)--(at.north);
+\draw[cell,fill=gold](.45,6.35)rectangle(7.5,9.4);
+\draw[arr](at.south)--(5.825,6.35);
+\sm{.6}{6.43}{6.75}{.5}{\f{a_t^{(T)}\longrightarrow\text{仿真}\longrightarrow r_t}}
+\txt{.6}{7.18}{6.75}{.6}{\f{r_t=\mathcal F_r^\dagger(r_t^{\rm wb},r_t^{\rm ee},r_t^{\rm obj},r_t^{\rm con})}}
+\sm{.6}{7.98}{6.75}{.4}{全身／末端／物体／接触奖励}
+\sm{.6}{8.62}{6.75}{.55}{\f{\max_\psi J_T^\dagger=\E_{\pi_\psi^{(T)}}\sum_t\gamma^t r_t}}
+\draw[ua](.45,8.90)--(.27,8.90)--(.27,4.42)--(teacher.west);
+
+% The reference curriculum and world-model replay are distinct buffers.
+\sm{.35}{10.77}{7.3}{.50}{仅学生：\f{m=0\land\mathrm{fail}\ \longrightarrow\ \mathcal B_{\rm ref}^\dagger}}
+\txt{.35}{11.67}{7.3}{.40}{\f{\mathcal B_{\rm ref}\to\mathcal R_{\rm init}^\dagger\to\mathrm{rollout}}}
+
+% World model: prior memory transition precedes current observation correction.
+\boxx{8.4}{2.3}{5.0}{1.15}{history}{mem}{\f{h_{t-1},s_{t-1},a_{t-1}}\\历史状态／上步动作}
+\boxx{13.75}{2.25}{8.8}{1.25}{gru}{white}{GRU：\f{f_\xi}\\\f{h_t=f_\xi(h_{t-1},s_{t-1},a_{t-1})}\ (5)}
+\boxx{23.0}{2.3}{2.8}{1.15}{ht}{mem}{\f{h_t}\\循环记忆}
+\draw[arr](history.east)--(gru.west);\draw[ba](gru.east)--(ht.west);
+
+\draw[cell,fill=enc](8.4,4.02)rectangle(25.7,6.25);
+\boxx{8.65}{4.23}{4.0}{.72}{ovis}{white}{\f{o_t^{\rm vis}} 深度/分割}
+\boxx{8.65}{5.3}{4.0}{.72}{oprop}{white}{\f{o_t^{\rm prop}}：本体}
+\boxx{13.0}{4.23}{2.0}{.72}{cnn}{enc}{CNN}
+\boxx{13.0}{5.3}{2.0}{.72}{mlp}{enc}{MLP}
+\boxx{15.65}{4.42}{6.8}{1.3}{encoder}{enc}{联合编码\\\f{e_t=E_\xi(o_t,a_{t-1})}\ (4)}
+\boxx{23.45}{4.72}{1.85}{.72}{et}{mem}{\f{e_t}}
+\draw[arr](ovis.east)--(cnn.west);\draw[arr](oprop.east)--(mlp.west);
+\draw[arr](cnn.east)--(15.28,4.59)--(15.28,4.86)--(15.65,4.86);
+\draw[arr](mlp.east)--(15.28,5.66)--(15.28,5.38)--(15.65,5.38);
+\draw[arr](encoder.east)--(et.west);
+\sm{16.25}{5.84}{6.0}{.27}{\f{a_{t-1}}：上一步实际动作}
+
+\boxx{8.65}{6.97}{7.5}{1.25}{prior}{enc}{先验：无当前观测\\\f{p_\xi(s_t\mid h_t)}}
+\boxx{17.3}{6.97}{8.0}{1.25}{post}{enc}{后验：由观测校正\\\f{q_\xi(s_t\mid h_t,e_t)}}
+\draw[ba](ht.south)--(24.4,3.78)--(25.95,3.78)--(25.95,6.58)--(12.4,6.58)--(prior.north);
+\draw[ba](20.2,6.58)--(20.2,6.97);
+\draw[arr,preaction={draw=wm,line width=3.7pt}](et.south)--(24.375,6.97);
+\boxx{8.65}{8.87}{7.5}{.73}{kl}{head}{\f{D_{\rm KL}(q_\xi\Vert p_\xi)}：分布监督}
+\boxx{18.0}{8.87}{7.3}{.73}{zt}{mem}{\f{z_t=(h_t,s_t)}：潜状态}
+\draw[ba](16.65,6.58)--(16.65,9.235)--(zt.west);
+\draw[arr](post.south)--(post.south |- zt.north);
+\node[small,anchor=west,inner sep=.2mm] at(22.1,8.56){采样\ \f{s_t}\ (6)};
+\draw[sa](prior.south)--(kl.north);
+\draw[sa,preaction={draw=wm,line width=3.4pt}](17.3,7.9)--(16.94,7.9)--(16.94,8.53)--(14.45,8.53)--(14.45,8.87);
+
+\draw[cell,fill=gold,draw=supc,dashed](11.86,9.98)rectangle(25.6,11.98);
+\boxx{8.55}{10.23}{3.05}{1.28}{decoder}{white}{解码器\\\f{\hat o_t=D_\xi(z_t)}}
+\boxx{12.04}{10.23}{3.1}{1.28}{rhead}{head}{奖励头\\\f{\hat r_t}}
+\boxx{15.43}{10.23}{3.1}{1.28}{phead}{head}{特权头\\\f{\hat x_t^{\rm priv}}}
+\boxx{18.82}{10.23}{3.1}{1.28}{chead}{head}{接触头\\\f{\hat c_t^{\rm contact}}}
+\boxx{22.21}{10.23}{3.1}{1.28}{ohead}{head}{物体头\\\f{\hat x_t^{\rm obj}}}
+\draw[ink,line width=.95pt](zt.south)--(21.65,9.83)--(10.075,9.83);
+\draw[ink,line width=.95pt](21.65,9.83)--(23.76,9.83);
+\foreach \x/\n in {10.075/decoder,13.59/rhead,16.98/phead,20.37/chead,23.76/ohead}{\draw[arr](\x,9.83)--(\n.north);}
+\sm{8.55}{11.67}{3.05}{.38}{仅训练重建}
+
+% Student has three distinct token groups, without a direct stochastic-state input.
+\boxx{26.75}{2.3}{6.75}{1.15}{studenth}{mem}{\f{h_t}：记忆特征}
+\boxx{33.85}{2.3}{2.45}{1.15}{tokenh}{enc}{投影\\\f{u_t^{h,\dagger}}}
+\boxx{26.75}{4.05}{6.75}{1.0}{pg}{white}{\f{[p_t,g_t]}\\本体＋目标条件}
+\boxx{33.85}{4.05}{2.45}{1.0}{tokenpg}{enc}{投影\\\f{u_t^{pg,\dagger}}}
+\boxx{26.75}{5.72}{6.75}{1.35}{aux}{head}{\f{\hat y_t^\dagger=[\hat r_t,\hat x_t^{\rm priv},\hat c_t^{\rm contact},\hat x_t^{\rm obj}]}}
+\boxx{33.85}{5.72}{2.45}{1.35}{tokenaux}{enc}{投影\\\f{u_t^{{\rm aux},\dagger}}}
+\draw[ba](ht.east)--(studenth.west);
+\draw[arr,draw=supc,line width=1.1pt](25.6,11.2)--(26.3,11.2)--(26.3,6.395)--(aux.west);
+\draw[arr](studenth.east)--(tokenh.west);\draw[arr](pg.east)--(tokenpg.west);\draw[arr](aux.east)--(tokenaux.west);
+\boxx{27.1}{7.57}{9.05}{.74}{trm}{act}{轻量 Transformer：融合三组 token}
+\draw[arr](tokenh.east)--(36.58,2.875)--(36.58,7.34)--(31.625,7.34)--(trm.north);
+\draw[ink,line width=.95pt](tokenpg.east)--(36.58,4.55);
+\draw[ink,line width=.95pt](tokenaux.east)--(36.58,6.395);
+\boxx{27.1}{8.68}{9.05}{.72}{ac}{act}{Actor--Critic MLP}
+\draw[arr](trm.south)--(ac.north);
+\boxx{26.75}{9.85}{2.9}{.71}{mus}{enc}{\f{\mu_t^{(S)}}}
+\boxx{30.05}{9.85}{2.9}{.71}{pi}{act}{\f{\pi_\theta(\cdot\mid c_t)}}
+\boxx{33.35}{9.85}{2.95}{.71}{value}{white}{{\fontsize{13.5}{15.5}\selectfont 价值\f{V_\theta^\dagger(c_t)}}}
+\draw[arr](ac.south)--(31.625,9.62)--(28.2,9.62)--(mus.north);
+\draw[arr](31.625,9.62)--(31.5,9.62)--(pi.north);
+\draw[arr](31.625,9.62)--(34.825,9.62)--(value.north);
+\boxx{28.2}{10.98}{6.95}{.66}{as}{enc}{\f{a_t^{(S)}\sim\pi_\theta(\cdot\mid c_t)}\ (2)}
+\draw[arr](pi.south)--(pi.south |- as.north);
+\sm{26.65}{11.83}{10.0}{.35}{\f{c_t=[p_t,g_t,\varphi_t^{\rm wm}],\quad\varphi_t^{\rm wm}=[h_t,\hat y_t]}\ (1,3)}
+
+
+% Compact but fully separated equations; the symbol key fills the lower-left area.
+\panel{.1}{12.5}{16.5}{16.6}{wm}{世界模型损失：只更新\f{\xi}}
+\txt{.4}{13.33}{15.9}{1.25}{\f{\mathcal L_{\rm wm}=\mathcal L_{\rm KL}+\mathcal L_{\rm rec}+\mathcal L_{\rm rew}+\mathcal L_{\rm priv}+\mathcal L_{\rm con}+\mathcal L_{\rm obj}}\ (10)}
+\sm{.4}{14.82}{15.9}{.64}{\f{Q_t^\dagger(s)=q_\xi(s\mid h_t,e_t),\quad P_t^\dagger(s)=p_\xi(s\mid h_t)}}
+\txt{.4}{15.63}{15.9}{.82}{\f{D_{\rm KL}(Q_t\Vert P_t)=\sum_s Q_t(s)\log\dfrac{Q_t(s)}{P_t(s)}}}
+\txt{.4}{16.67}{15.9}{.58}{\f{\mathcal L_{\rm KL}=\alpha_{\rm dyn}\mathcal L_{\rm dyn}+\alpha_{\rm rep}\mathcal L_{\rm rep}}}
+\sm{.4}{17.48}{15.9}{1.05}{\f{\begin{aligned}\mathcal L_{\rm dyn}^\dagger&=\E_{\mathcal D}\max\!\left(\tau,D_{\rm KL}(\sg[Q_t]\Vert P_t)\right)\\\mathcal L_{\rm rep}^\dagger&=\E_{\mathcal D}\max\!\left(\tau,D_{\rm KL}(Q_t\Vert\sg[P_t])\right)\end{aligned}}}
+\sm{.4}{18.76}{15.9}{.41}{\f{\dagger}：通用 stop-gradient／free-bits 展开}
+\draw[line,line width=.6pt](.45,19.42)--(16.2,19.42);
+\txt{.4}{19.66}{15.9}{1.27}{\f{\mathcal L_{\rm rec}=\MSE(\hat o_t^{\rm vis},o_t^{\rm vis})+\MSE(\symlog(\hat o_t^{\rm prop}),\symlog(o_t^{\rm prop}))}}
+\sm{.4}{21.15}{15.9}{.51}{\f{\MSE(u,v)=\|u-v\|_2^2/N,\quad N^\dagger:\text{元素数}}}
+\sm{.4}{21.86}{15.9}{.51}{\f{\symlog(u)=\operatorname{sign}(u)\log(1+|u|)}}
+\txt{.4}{22.95}{15.9}{2.15}{\f{\begin{aligned}\mathcal L_{\rm rew}&=\E_{\mathcal D}\ell_{\rm rew}(\hat r_t,r_t)\\\mathcal L_{\rm priv}&=\E_{\mathcal D}\ell_{\rm priv}(\hat x_t^{\rm priv},x_t^{\rm priv})\\\mathcal L_{\rm con}&=\E_{\mathcal D}\ell_{\rm con}(\hat c_t^{\rm contact},c_t^{\rm contact})\\\mathcal L_{\rm obj}&=\E_{\mathcal D}\ell_{\rm obj}(\hat x_t^{\rm obj},x_t^{\rm obj})\end{aligned}}}
+\sm{.4}{25.62}{15.9}{.53}{\f{x_t^{\rm priv}=[x_t^{\rm obj},G_t^\dagger,c_t^{\rm contact}],\quad x_t^{\rm obj}\in\R^{13}}}
+\sm{.4}{26.22}{15.9}{.43}{真值来自仿真／任务注释}
+\draw[line,line width=.6pt](.45,26.88)--(16.2,26.88);
+\sm{.4}{27.08}{15.9}{.48}{\f{h_t\in\R^{d_h},\ s_t\in\mathcal S,\ a_t\in\R^{d_a},\ e_t\in\R^{d_e},\ z_t=(h_t,s_t)}}
+\sm{.4}{27.75}{15.9}{.48}{\f{p_t\in\R^{d_p},\ g_t\in\R^{d_g},\ x_t\in\R^{d_x},\ r_t\in\R}}
+
+% The action arguments are written inside the dynamics blocks to avoid dangling labels.
+\panel{16.8}{12.5}{20.1}{12.8}{white}{学生损失：固定教师与 WM，只更新\f{\theta}}
+\txt{17.1}{13.25}{19.5}{.65}{\f{\mathcal L_{\rm action}=\|\mu_t^{(S)}-\mu_t^{(T)}\|_2^2}}
+\boxx{17.18}{14.84}{4.3}{1.16}{start}{mem}{同一后验起点\\\f{z_t^{(S)}=z_t^{(T)}=z_t}}
+\boxx{23.05}{14.35}{7.2}{.94}{ft}{mem}{\f{F_\xi^\dagger(\cdot,\mu_{t+k-1}^{(T)})}}
+\boxx{23.05}{15.67}{7.2}{.94}{fs}{mem}{\f{F_\xi^\dagger(\cdot,\mu_{t+k-1}^{(S)})}}
+\boxx{31.08}{14.35}{5.1}{.94}{futuret}{head}{\f{z_{t+k}^{(T)}}}
+\boxx{31.08}{15.67}{5.1}{.94}{futures}{head}{\f{z_{t+k}^{(S)}}}
+\draw[arr](start.east)--(22.05,15.42)--(22.05,14.82)--(ft.west);
+\draw[arr](22.05,15.42)--(22.05,16.14)--(fs.west);
+\draw[arr](ft.east)--(futuret.west);\draw[arr](fs.east)--(futures.west);
+\sm{22.9}{16.78}{13.2}{.42}{同一 GRU＋先验}
+\sm{17.15}{17.42}{19.5}{1.03}{\f{\begin{aligned}h_{t+k}^{(b)}&=f_\xi(h_{t+k-1}^{(b)},s_{t+k-1}^{(b)},\mu_{t+k-1}^{(b)})\\s_{t+k}^{(b)}&\sim p_\xi(\cdot\mid h_{t+k}^{(b)}),\quad b\in\{S,T\}\end{aligned}}\ (7--8)}
+\draw[cell,fill=gold,draw=supc](17.14,18.77)rectangle(36.5,20.13);
+\txt{17.25}{18.94}{19.1}{1.03}{\f{\mathcal L_{\rm latent}=\sum\nolimits_{k=1}^{H}\big[\|h_{t+k}^{(S)}-h_{t+k}^{(T)}\|_2^2+\lambda_{\rm stoch}\|s_{t+k}^{(S)}-s_{t+k}^{(T)}\|_2^2\big]}\ (9)}
+\draw[sa](futuret.east)--(36.58,14.82)--(36.58,18.42)--(35.65,18.42)--(35.65,18.77);
+\draw[draw=supc,dashed,line width=.95pt](futures.east)--(36.58,16.14);
+\sm{17.15}{20.3}{19.4}{.41}{\f{H=3}；不读未来观测；梯度经过 WM 回到学生动作}
+\txt{17.15}{20.94}{19.4}{.62}{\f{\mathcal L_{\rm total}=c\,w_{\rm action}\mathcal L_{\rm action}+w_{\rm wm}\mathcal L_{\rm latent}+w_{\rm ppo}\mathcal L_{\rm ppo}}\ (11)}
+\sm{17.15}{21.77}{19.4}{.54}{\f{\kappa_t^\dagger=\pi_\theta(a_t\mid c_t)/\pi_{\rm old}(a_t\mid c_t),\quad\hat A_t^\dagger:\text{优势}}}
+\sm{17.15}{22.52}{19.4}{.54}{\f{\mathcal L_{\rm clip}^\dagger=-\E\min\!\left(\kappa_t\hat A_t,\clip(\kappa_t,1-\epsilon,1+\epsilon)\hat A_t\right)}}
+\sm{17.15}{23.27}{19.4}{.51}{\f{\mathcal L_{\rm ppo}^\dagger=\mathcal L_{\rm clip}^\dagger+\lambda_V\E(V_\theta(c_t)-\hat R_t)^2-\lambda_{\mathcal H}\mathcal H(\pi_\theta)}}
+\sm{17.15}{24.01}{19.4}{.50}{\f{\mathcal H^\dagger(\pi_\theta)=-\E_{c_t}\E_{a\sim\pi_\theta(\cdot\mid c_t)}\log\pi_\theta(a\mid c_t)}}
+\sm{17.15}{24.73}{19.4}{.42}{\f{\hat R_t^\dagger}：回报目标；\f{\mathcal H^\dagger}：熵；\f{\epsilon^\dagger}：裁剪阈值。PPO 为通用展开}
+
+% PCG occupies a short row with one formula group per column.
+\panel{16.8}{25.5}{20.1}{3.6}{white}{PCG：按真实表现分配教师／学生回合}
+\sm{17.1}{26.38}{6.3}{.42}{\f{m\sim\mathrm{Bernoulli}(\rho)}}
+\sm{17.1}{27.16}{6.3}{.82}{\f{a_t=\begin{cases}a_t^{(T)},&m=1\\a_t^{(S)},&m=0\end{cases}}}
+\sm{23.64}{26.43}{6.65}{1.29}{\f{\hat r_T\leftarrow\EMA(r_t\mid m=1)}\\\f{\hat r_S\leftarrow\EMA(r_t\mid m=0)}}
+\sm{30.49}{26.38}{6.0}{.5}{\f{\pi=\hat r_S/(\hat r_T+\varepsilon)}}
+\sm{30.49}{27.38}{6.0}{.65}{\f{\rho_{\max}\xrightarrow[\rm EMA]{\pi\to\pi_{\rm target}^\dagger}\rho_{\min}}}
+\sm{17.15}{28.53}{19.35}{.37}{每回合选执行者；\f{c=\mathrm{const}}；PPO 仅用学生回合，预热后低权重}
+
+% Label backgrounds preserve both the return-arrow direction and readable type.
+\begin{scope}[yshift=-.3cm]
+\panel{.1}{29.02}{36.8}{2.35}{white}{交替训练：教师已固定，WM 与学生分别优化}
+\boxx{.5}{29.86}{10.6}{.85}{data}{enc}{\f{\mathcal D^\dagger=\{o_t,a_t,r_t,x_t^{\rm priv},c_t^{\rm contact},x_t^{\rm obj}\}}}
+\boxx{12.07}{29.86}{10.95}{.85}{wmupd}{mem}{\f{\min_\xi\mathcal L_{\rm wm}}：周期更新世界模型}
+\boxx{24.0}{29.86}{12.3}{.85}{supd}{act}{\f{\min_\theta\mathcal L_{\rm total}}：更新学生}
+\draw[arr](data.east)--(wmupd.west);\draw[arr](wmupd.east)--(supd.west);
+\draw[ua](supd.south)--(30.15,31.04)--(5.8,31.04)--(data.south);
+\node[small,fill=white,inner sep=.6mm]at(18.5,31.04){学生继续交互并补充经验\quad\f{\mathcal D\ne\mathcal B_{\rm ref}}};
+
+\panel{.1}{31.57}{36.8}{2.55}{white}{部署：每步更新记忆；模型权重固定}
+\boxx{.5}{32.4}{6.35}{.77}{obs}{enc}{\f{o_t,a_{t-1},z_{t-1}}}
+\boxx{7.65}{32.4}{9.15}{.77}{dwm}{mem}{编码器＋GRU＋后验＋预测头}
+\boxx{17.6}{32.4}{4.65}{.77}{phi}{head}{\f{\varphi_t^{\rm wm}}}
+\boxx{23.05}{32.4}{8.6}{.77}{dpi}{act}{学生\f{\pi_\theta(\cdot\mid[p_t,g_t,\varphi_t^{\rm wm}])}}
+\boxx{32.45}{32.4}{3.85}{.77}{da}{enc}{\f{a_t}}
+\draw[arr](obs.east)--(dwm.west);\draw[arr](dwm.east)--(phi.west);\draw[arr](phi.east)--(dpi.west);\draw[arr](dpi.east)--(da.west);
+\draw[arr](da.south)--(34.375,33.69)--(3.675,33.69)--(obs.south);
+\node[small,fill=white,inner sep=.6mm]at(18.5,33.69){环境产生\f{o_{t+1}}；缓存\f{(z_t,a_t)}，进入下一步};
+
+\sm{.1}{34.34}{36.8}{.4}{\f{p_t}：本体；\f{g_t}：目标物体姿态＋短时身体轨迹；\f{G_t^\dagger}：交互图；\f{s_t}：离散随机态；\f{\hat{\cdot}}：预测；\f{\mu_t^{(T/S)}}：动作均值}
+\sm{.1}{34.83}{36.8}{.42}{\f{\dagger}：补充记号／通用展开}
+\end{scope}
+\end{tikzpicture}
+\end{document}
